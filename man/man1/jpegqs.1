@@ -1,0 +1,49 @@
+.TH "QuantSmooth" 1 0.20170128 "28 Jan 2020" "User Manual"
+
+.SH NAME
+jpegqs
+
+.SH DESCRIPTION
+JPEG Quant Smooth
+
+This program tries to recreate lost precision of DCT coefficients based on quantization table from jpeg image.
+Output saved as jpeg image with quantization set to 1 (like jpeg saved with 100% quality). You can save smoothed image with original quantization tables resulting in same DCT coefficients as in original image.
+
+.SH SYNOPSIS
+jpegqs [options] input.jpg output.jpg
+
+.SH OPTIONS
+.TP
+--optimize
+Optimize Huffman table (smaller file, but slow compression)
+.TP
+--verbose level
+Print libjpeg debug output
+.TP
+--info flags
+Print quantsmooth debug output
+.TP
+--border N.N
+Size border (default = 2.0)
+.TP
+--gain N.N
+Gain coefficients (default = 2.0)
+.TP
+--scale N.N
+Scale delta coefficients (default = 1.0)
+.TP
+--niter N
+Number iteration (default = 3)
+
+.SH EXAMPLE
+jpegqs lenna.jpg lenna-qs.jpg
+
+.SH COPYRIGHT
+Copyright 2019-2020 Ilya Kurdyukov.
+ All rights reserved.
+
+.SH SEE ALSO
+cjpeg(1), djpeg(1), jpeg2png(1)
+
+.SH CONTACTS
+Homepage: https://github.com/ilyakurdyukov/jpeg-quantsmooth
