@@ -21,7 +21,7 @@
 
 void quantsmooth_init(JQS_PARAMS jqsparams)
 {
-    int i;
+    int i, l0, l1, p0, p1;
     JCOEF coef[DCTSIZE2];
 
     range_limit_init();
@@ -35,53 +35,79 @@ void quantsmooth_init(JQS_PARAMS jqsparams)
         coef[i] = 1;
         idct_fslow(coef, tab);
 
-#define M1(xx, yy, j) \
-    p0 = y*DCTSIZE+x; p1 = (yy)*DCTSIZE+(xx); \
-    tab[j*DCTSIZE2+p0] = tab[p0] - tab[p1];
+        l0 = 0;
         for (y = 0; y < DCTSIZE; y++)
         {
+            l1 = l0;
             for (x = 0; x < DCTSIZE-1; x++)
             {
-                M1(x+1,y,1)
+                p0 = l0 + x;
+                p1 = l1 + x + 1;
+                tab[DCTSIZE2 + p0] = tab[p0] - tab[p1];
             }
-            tab[DCTSIZE2+y*DCTSIZE+x] = tab[y*DCTSIZE+x] * bcoef;
+            tab[DCTSIZE2 + l0 + x] = tab[l0 + x] * bcoef;
+            l0 += DCTSIZE;
         }
-        for (y = 0; y < DCTSIZE-1; y++)
+        l0 = 0;
+        for (y = 0; y < (DCTSIZE - 1); y++)
+        {
+            l1 = l0 + DCTSIZE;
             for (x = 0; x < DCTSIZE; x++)
             {
-                M1(x,y+1,2)
+                p0 = l0 + x;
+                p1 = l1 + x;
+                tab[DCTSIZE2 + DCTSIZE2 + p0] = tab[p0] - tab[p1];
             }
-#undef M1
+            l0 += DCTSIZE;
+        }
         for (x = 0; x < DCTSIZE2; x++) tab[x] *= bcoef;
-        for (y = 0; y < DCTSIZE; y++) tab[3*DCTSIZE2+y] = tab[y*DCTSIZE];
+        l0 = 3 * DCTSIZE2;
+        l1 = 0;
+        for (y = 0; y < DCTSIZE; y++)
+        {
+            tab[l0 + y] = tab[l1];
+            l1 += DCTSIZE;
+        }
     }
 }
 
 void quantsmooth_block(JCOEFPTR coef, UINT16 *quantval, JSAMPROW image, int stride, JQS_PARAMS jqsparams)
 {
 
-    int k, x, y, flag = 1;
+    int k, y, flag = 1, ys, i, j, range;
+    int dsize23, dsize7, dsize8, jsize;
     int div, coef1, add;
     int dh, dl, d0, d1;
-    int32_t a0, sign;
-    JSAMPLE ALIGN(32) buf[DCTSIZE2+DCTSIZE*2];
+    int32_t c0, sign;
+    float a0, a1, a2, a3, a4, a5, f0;
+    float sum[8];
+    float *tab;
+    JSAMPLE lborder[8];
+    JSAMPLE *p0, *p1, rborder[8];
+    JSAMPLE ALIGN(32) buf[DCTSIZE2 + DCTSIZE * 2];
 #ifdef USE_JSIMD
     JSAMPROW output_buf[8] = { buf+8*0, buf+8*1, buf+8*2, buf+8*3, buf+8*4, buf+8*5, buf+8*6, buf+8*7 };
     int output_col = 0;
 #endif
 
-    (void)x;
+    ys = 0;
     for (y = 0; y < DCTSIZE; y++)
     {
-        buf[DCTSIZE2+y] = image[y*stride-1];
-        buf[DCTSIZE2+y+DCTSIZE] = image[y*stride+8];
+        buf[DCTSIZE2 + y] = image[ys - 1];
+        buf[DCTSIZE2 + y + DCTSIZE] = image[ys + 8];
+        ys += stride;
     }
 
-    for (k = DCTSIZE2-1; k > 0; k--)
+    dsize23 = 3 * DCTSIZE2;
+    dsize7 = 7 * DCTSIZE;
+    dsize8 = 8 * stride;
+    jsize = 7 * sizeof(JSAMPLE);
+    for (k = DCTSIZE2 - 1; k > 0; k--)
     {
-        int i = jpeg_natural_order[k];
-        float *tab = quantsmooth_tables[i], a2 = 0, a3 = 0;
-        int range = (int)((float)quantval[i] * jqsparams.gain + 0.5f);
+        a2 = a3 = 0.0f;
+        i = jpeg_natural_order[k];
+        tab = quantsmooth_tables[i];
+        range = (int)((float)quantval[i] * jqsparams.gain + 0.5f);
 
         if (flag && zigzag_refresh[i])
         {
@@ -89,97 +115,90 @@ void quantsmooth_block(JCOEFPTR coef, UINT16 *quantval, JSAMPROW image, int stri
             flag = 0;
         }
 
-#define VINIT \
-    int i; JSAMPLE *p0, *p1, rborder[8]; \
-    float sum[8] = { 0,0,0,0, 0,0,0,0 };
-
 #define VCORE(tab) \
-    for (i = 0; i < 4; i++) { \
-        float a0, a1, a4, a5, f0; \
-        VCORE1(i, a0, a1, tab) VCORE1(i+4, a4, a5, tab) \
-        sum[i] += a0 + a4; sum[i+4] += a1 + a5; \
+    for (j = 0; j < 4; j++) \
+    { \
+        a0 = p0[j] - p1[j]; \
+        a1 = (tab)[j]; \
+        f0 = (float)range-fabsf(a0); \
+        f0 = (f0 < 0) ? 0 : f0; \
+        f0 *= f0; \
+        a0 *= f0; \
+        a1 *= f0; \
+        a0 *= a1; \
+        a1 *= a1; \
+        a4 = p0[j+4] - p1[j+4]; \
+        a5 = (tab)[j+4]; \
+        f0 = (float)range-fabsf(a4); \
+        f0 = (f0 < 0) ? 0 : f0; f0 *= f0; \
+        a4 *= f0; \
+        a5 *= f0; \
+        a4 *= a5; \
+        a5 *= a5;\
+        sum[j] += a0 + a4; \
+        sum[j+4] += a1 + a5; \
     }
+        sum[0] = sum[1] = sum[2] = sum[3] = sum[4] = sum[5] = sum[6] = sum[7] = 0;
 
-#define VCORE1(i, a0, a1, tab) \
-    a0 = p0[i] - p1[i]; a1 = (tab)[i]; \
-    f0 = (float)range-fabsf(a0); if (f0 < 0) f0 = 0; f0 *= f0; \
-    a0 *= f0; a1 *= f0; a0 *= a1; a1 *= a1;
-
-#define VFIN \
-    a2 = (sum[0] + sum[2]) + (sum[1] + sum[3]); \
-    a3 = (sum[4] + sum[6]) + (sum[5] + sum[7]);
-
-#define VLDPIX(i, a) p##i = a;
-#define VRIGHT(p) p1 = rborder; memcpy(p1, p0 + 1, 7 * sizeof(JSAMPLE)); p1[7] = *(p);
-#define VCOPY1 p0 = p1;
-
+        ys = 0;
+        for (y = 0; y < DCTSIZE; y++)
         {
-            JSAMPLE lborder[8];
-            VINIT
-
-            for (y = 0; y < DCTSIZE; y++)
-            {
-                lborder[y] = buf[y*DCTSIZE];
-                VLDPIX(0, buf+y*DCTSIZE)
-                VRIGHT(buf+DCTSIZE2+DCTSIZE+y)
-                VCORE(tab+64+y*DCTSIZE)
-            }
-
-            VLDPIX(0, buf)
-            for (y = 0; y < DCTSIZE-1; y++)
-            {
-                VLDPIX(1, buf+y*DCTSIZE+DCTSIZE)
-                VCORE(tab+64*2+y*DCTSIZE)
-                VCOPY1
-            }
-
-            VLDPIX(0, buf)
-            VLDPIX(1, image-stride)
-            VCORE(tab)
-            VLDPIX(0, buf+7*DCTSIZE)
-            VLDPIX(1, image+8*stride)
-            VCORE(tab+7*DCTSIZE)
-            VLDPIX(0, lborder)
-            VLDPIX(1, buf+DCTSIZE2)
-            VCORE(tab+3*DCTSIZE2)
-
-            VFIN
+            lborder[y] = buf[ys];
+            p0 = buf + ys;
+            p1 = rborder;
+            memcpy(p1, p0 + 1, jsize);
+            p1[7] = *(buf + DCTSIZE2 + DCTSIZE + y);
+            VCORE(tab+64+ys)
+            ys += DCTSIZE;
         }
-#undef VINIT
+
+        p0 = buf;
+        ys = 0;
+        for (y = 0; y < DCTSIZE-1; y++)
+        {
+            p1 = buf + ys + DCTSIZE;
+            VCORE(tab+128+ys)
+            p0 = p1;
+            ys += DCTSIZE;
+        }
+
+        p0 = buf;
+        p1 = image - stride;
+        VCORE(tab)
+        p0 = buf + dsize7;
+        p1 = image + dsize8;
+        VCORE(tab+dsize7)
+        p0 = lborder;
+        p1 = buf + DCTSIZE2;
+        VCORE(tab+dsize23)
+
+        a2 = (sum[0] + sum[2]) + (sum[1] + sum[3]);
+        a3 = (sum[4] + sum[6]) + (sum[5] + sum[7]);
+
 #undef VCORE
-#ifdef VCORE1
-#  undef VCORE1
-#endif
-#undef VFIN
-#undef VLDPIX
-#undef VRIGHT
-#undef VCOPY1
 
         a2 = a2 / a3;
 
-        {
-            div = quantval[i];
-            coef1 = coef[i];
-            d0 = (div-1) >> 1;
-            d1 = div >> 1;
-            // int a0 = (coef1 + (coef1 < 0 ? -div : div) / 2) / div * div;
-            a0 = coef1;
-            sign = a0 >> 31;
-            a0 = (a0 ^ sign) - sign;
-            a0 = ((a0 + (div >> 1)) / div) * div;
-            a0 = (a0 ^ sign) - sign;
+        div = quantval[i];
+        coef1 = coef[i];
+        d0 = (div-1) >> 1;
+        d1 = div >> 1;
+        c0 = coef1;
+        sign = c0 >> 31;
+        c0 = (c0 ^ sign) - sign;
+        c0 = ((c0 + (div >> 1)) / div) * div;
+        c0 = (c0 ^ sign) - sign;
 
-            dh = a0 < 0 ? d1 : d0;
-            dl = a0 > 0 ? -d1 : -d0;
+        dh = c0 < 0 ? d1 : d0;
+        dl = c0 > 0 ? -d1 : -d0;
 
-            add = coef1 - a0;
-            add -= roundf(a2 * jqsparams.scale);
-            add = (add < dh) ? add : dh;
-            add = (add > dl) ? add : dl;
-            add += a0;
-            flag += add != coef1;
-            coef[i] = add;
-        }
+        add = coef1 - c0;
+        add -= roundf(a2 * jqsparams.scale);
+        add = (add < dh) ? add : dh;
+        add = (add > dl) ? add : dl;
+        add += c0;
+        flag += add != coef1;
+        coef[i] = add;
     }
 }
 
