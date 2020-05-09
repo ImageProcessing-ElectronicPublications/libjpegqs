@@ -25,7 +25,7 @@
 #define STRINGIFY(s) #s
 #define TOSTRING(s) STRINGIFY(s)
 
-#include "quantsmooth.h"
+#include "jpegqs.h"
 
 int main(int argc, char **argv)
 {

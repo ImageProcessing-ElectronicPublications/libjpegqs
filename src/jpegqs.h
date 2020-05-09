@@ -17,8 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef QUANTSMOOTH_H
-#define QUANTSMOOTH_H
+#ifndef JPEGQUANTSMOOTH_H
+#define JPEGQUANTSMOOTH_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +27,8 @@
 #include <math.h>
 #include "idct.h"
 #include "jpeglib.h"
+
+#define JPEGQS_VERSION "0.20200509"
 
 typedef struct
 {
@@ -108,4 +110,4 @@ void quantsmooth_block(JCOEFPTR coef, UINT16 *quantval, JSAMPROW image, int stri
 void quantsmooth_transform(j_decompress_ptr srcinfo, jvirt_barray_ptr *src_coef_arrays, JQS_PARAMS jqsparams);
 void do_quantsmooth(j_decompress_ptr srcinfo, jvirt_barray_ptr *coef_arrays, JQS_PARAMS jqsparams);
 
-#endif //QUANTSMOOTH_H//
+#endif //JPEGQUANTSMOOTH_H//

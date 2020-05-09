@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "quantsmooth.h"
+#include "jpegqs.h"
 
 void quantsmooth_init(JQS_PARAMS jqsparams)
 {

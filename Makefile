@@ -1,5 +1,4 @@
 
-#APPNAME ?= quantsmooth #origin name
 APPNAME ?= jpegqs
 CFLAGS ?= -Wall -O2 -fopenmp -DAPPNAME=$(APPNAME)
 LIBS ?= -ljpeg -lm
@@ -15,14 +14,14 @@ all: $(PLIBS) $(PROGS)
 clean:
 	rm -rf  $(PLIBS) $(PROGS) $(SRCS)/*.o
 
-lib$(APPNAME).a: $(SRCS)/idct.o $(SRCS)/libquantsmooth.o
+lib$(APPNAME).a: $(SRCS)/idct.o $(SRCS)/libjpegqs.o
 	$(AR) rcs $@ $^
 
-lib$(APPNAME).so.0: $(SRCS)/idct.o $(SRCS)/libquantsmooth.o
+lib$(APPNAME).so.0: $(SRCS)/idct.o $(SRCS)/libjpegqs.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LIBS) -s
 
-$(APPNAME): lib$(APPNAME).so.0 $(SRCS)/quantsmooth.o
+$(APPNAME): lib$(APPNAME).so.0 $(SRCS)/jpegqs.o
 	$(CC) $(CFLAGS) $^ -o $@ -s
 
-$(APPNAME)-static: $(SRCS)/quantsmooth.c lib$(APPNAME).a
+$(APPNAME)-static: $(SRCS)/jpegqs.c lib$(APPNAME).a
 	$(CC) $(CFLAGS) $^ -o $@ $(LIBS) -s
