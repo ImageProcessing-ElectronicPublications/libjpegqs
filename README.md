@@ -1,3 +1,9 @@
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/ImageProcessing-ElectronicPublications/libjpegqs)
+![GitHub Release Date](https://img.shields.io/github/release-date/ImageProcessing-ElectronicPublications/libjpegqs)
+![GitHub repo size](https://img.shields.io/github/repo-size/ImageProcessing-ElectronicPublications/libjpegqs)
+![GitHub all releases](https://img.shields.io/github/downloads/ImageProcessing-ElectronicPublications/libjpegqs/total)
+![GitHub](https://img.shields.io/github/license/ImageProcessing-ElectronicPublications/libjpegqs)
+
 # Library JPEG Quant Smooth
 
 This program tries to recreate lost precision of DCT coefficients based on quantization table from jpeg image.
