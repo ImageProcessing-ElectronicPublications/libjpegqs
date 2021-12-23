@@ -21,16 +21,16 @@
 
 void quantsmooth_init(JQS_PARAMS jqsparams)
 {
-    int i, l0, l1, p0, p1;
+    int i, l0, l1, x, y, p0, p1;
+    float *tab, bcoef;
     JCOEF coef[DCTSIZE2];
 
     range_limit_init();
 
     for (i = 0; i < DCTSIZE2; i++)
     {
-        float *tab = quantsmooth_tables[i];
-        float bcoef = jqsparams.border;
-        int x, y, p0, p1;
+        tab = quantsmooth_tables[i];
+        bcoef = jqsparams.border;
         memset(coef, 0, sizeof(coef));
         coef[i] = 1;
         idct_fslow(coef, tab);

@@ -1,10 +1,10 @@
-
 APPNAME ?= jpegqs
-CFLAGS ?= -Wall -O2 -fopenmp -DAPPNAME=$(APPNAME)
+MPFLAGS ?= -fopenmp
+CFLAGS ?= -Wall -O2 $(MPFLAGS) -DAPPNAME=$(APPNAME)
 LIBS ?= -ljpeg -lm
 SRCS = src
 
-ifeq ($(shell uname --machine), x86_64)
+ifneq ($(shell uname --machine), i386)
     CFLAGS += -fPIC
 endif
 

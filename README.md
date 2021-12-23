@@ -69,6 +69,11 @@ If you do not want to use SSE, type:
 make CFLAGS="-fopenmp -O2 -mno-sse2"
 ```
 
+If you do not want to use OPENMP (MacOS), type:
+```sh
+make MPFLAGS=
+```
+
 ### With libjpeg 6b form sources
 ```sh
 wget https://www.ijg.org/files/jpegsrc.v6b.tar.gz
