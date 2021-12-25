@@ -73,6 +73,10 @@ If you do not want to use OPENMP (MacOS), type:
 ```sh
 make MPFLAGS=
 ```
+Or when using libomp (MacOS): 
+```sh
+make MPFLAGS="-Xpreprocessor -fopenmp -lomp"
+```
 
 ### With libjpeg 6b form sources
 ```sh
