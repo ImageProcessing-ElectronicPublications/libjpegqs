@@ -19,6 +19,8 @@
 
 #include "jpegqs.h"
 
+static float ALIGN(32) quantsmooth_tables[DCTSIZE2][3*DCTSIZE2 + DCTSIZE];
+
 void quantsmooth_init(JQS_PARAMS jqsparams)
 {
     int i, l0, l1, x, y, p0, p1;

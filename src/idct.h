@@ -43,8 +43,6 @@ static const char jpeg_natural_order[DCTSIZE2] =
     53, 60, 61, 54, 47, 55, 62, 63
 };
 
-static JSAMPLE range_limit_static[11 * CENTERJSAMPLE];
-
 #define CONST_BITS  13
 #define PASS1_BITS  2
 

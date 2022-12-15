@@ -23,6 +23,8 @@
 
 #include "idct.h"
 
+static JSAMPLE range_limit_static[11 * CENTERJSAMPLE];
+
 void range_limit_init()
 {
     int i, c = CENTERJSAMPLE, m = c * 2;

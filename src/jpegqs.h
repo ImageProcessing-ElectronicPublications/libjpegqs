@@ -79,7 +79,6 @@ static inline int64_t get_time_usec()
 
 #include "idct.h"
 
-static float ALIGN(32) quantsmooth_tables[DCTSIZE2][3*DCTSIZE2 + DCTSIZE];
 void quantsmooth_init(JQS_PARAMS jqsparams);
 
 // When compiling with libjpeg-turbo and static linking, you can use

@@ -147,6 +147,10 @@ int main(int argc, char **argv)
 
     (void) jpeg_read_header(&srcinfo, TRUE);
     src_coef_arrays = jpeg_read_coefficients(&srcinfo);
+    if (src_coef_arrays == NULL) {
+        logfmt("%s: can't read coefficients\n", progname);
+        return 1;
+    }
     logfmt("Options: border = %f, gain = %f, scale = %f, niter = %d\n", jqsparams.border, jqsparams.gain, jqsparams.scale, jqsparams.niter);
     do_quantsmooth(&srcinfo, src_coef_arrays, jqsparams);
 
